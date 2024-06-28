@@ -2,11 +2,11 @@
 This repository contains a system for managing user transfers and sending emails to banks. The system handles various operations related to bank accounts and transactions.
 
 ## 🚀Features
-**Manage multiple bank transfers.
-**Send emails to banks with cheque information.
-**Approve or reject transactions.
-**Export transaction data to Excel.
-**Filter transactions by bank.
+- **Manage multiple bank transfers.
+- **Send emails to banks with cheque information.
+- **Approve or reject transactions.
+- **Export transaction data to Excel.
+- **Filter transactions by bank.
 
 
 ## Technologies Used
