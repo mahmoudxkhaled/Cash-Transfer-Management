@@ -54,6 +54,7 @@ Create an appsettings.json file in the root directory with the following structu
 
 - Go to the Transfer Request page.
 - Fill in the transfer details and submit.
+  
 3- Approve or Reject Transfers:
 
 - Go to the Transfer Approval page (admin only).
