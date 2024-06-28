@@ -38,6 +38,7 @@ Create an appsettings.json file in the root directory with the following structu
     "SenderPassword": "YourEmailPassword"
   }
 }
+```
 ### 3. Restore .NET Packages
  
 ### 4. Run the Application
