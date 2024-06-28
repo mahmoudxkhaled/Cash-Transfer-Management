@@ -7,13 +7,24 @@ This repository contains a system for managing user transfers and sending emails
 **Approve or reject transactions.
 **Export transaction data to Excel.
 **Filter transactions by bank.
-Prerequisites
-.NET 8.0 SDK
-SQL Server
-SMTP Email Server
+
+
+## Technologies Used
+** .NET 8.0
+** C#
+** Blazor
+** SQL Server
+** Syncfusion for Excel Export
+** SMTP for Email Sending
+
+## Prerequisites
+** .NET 8.0 SDK
+** SQL Server
+** SMTP Email Server
+
+
 
 ## Environment Setup
-
 ### 1. Clone the Repository
 ### 2. Create Configuration File
 Create an appsettings.json file in the root directory with the following structure:
@@ -36,27 +47,24 @@ Create an appsettings.json file in the root directory with the following structu
 ### 5. How to Use
 1- Login:
 
-Enter your username and password to log in.
-Admin users are redirected to the Transfer Approval page.
-Regular users are redirected to the Transfer Request page.
-Add a Transfer:
+** Enter your username and password to log in.
+** Admin users are redirected to the Transfer Approval page.
+** Regular users are redirected to the Transfer Request page.
 
-Go to the Transfer Request page.
-Fill in the transfer details and submit.
-Approve or Reject Transfers:
+2- Add a Transfer:
 
-Go to the Transfer Approval page (admin only).
-Review pending transfers and approve or reject them.
-Export to Excel:
+** Go to the Transfer Request page.
+** Fill in the transfer details and submit.
+3- Approve or Reject Transfers:
 
-Go to the Export page.
-Select the desired transactions and export them to an Excel file.
-Send Emails:
+** Go to the Transfer Approval page (admin only).
+** Review pending transfers and approve or reject them.
 
-Approved transfers will trigger an email to the respective bank with cheque details.
-Contributing
-We welcome contributions! Please follow these steps:
+4- Export to Excel:
 
-Fork the repository.
-Create a new branch for your feature or bug fix.
-Commit your changes.
+** Go to the Export page.
+** Select the desired transactions and export them to an Excel file.
+
+5- Send Emails:
+
+** Approved transfers will trigger an email to the respective bank with cheque details.
