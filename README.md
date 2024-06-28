@@ -8,7 +8,7 @@ This repository contains a system for managing user transfers and sending emails
 - Export transaction data to Excel.
 - Filter transactions by bank.
 
-## Technologies Used
+## 🛠️Technologies Used
 - .NET 8.0
 - C#
 - Blazor
@@ -21,7 +21,7 @@ This repository contains a system for managing user transfers and sending emails
 - SQL Server
 - SMTP Email Server
 
-## Environment Setup
+## 📦Environment Setup
 ### 1. Clone the Repository
 ### 2. Create Configuration File
 Create an appsettings.json file in the root directory with the following structure:
@@ -43,7 +43,7 @@ Create an appsettings.json file in the root directory with the following structu
  
 ### 4. Run the Application
 
-### 5. How to Use
+### 📝How to Use
 1- Login:
 
 - Enter your username and password to log in.
