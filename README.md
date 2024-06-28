@@ -58,7 +58,7 @@ Create an appsettings.json file in the root directory with the following structu
 3- Approve or Reject Transfers:
 
 - Go to the Transfer Approval page (admin only).
-- Review pending transfers and approve or reject them.
+- Review pending transfers from accountant and approve or reject them.
 
 4- Export to Excel:
 
