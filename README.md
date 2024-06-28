@@ -1,13 +1,12 @@
 # Cash-Transfer-Management-System
-This repository contains a system for managing user transfers and sending emails to banks. The system handles various operations related to bank accounts and transactions.
+This repository contains a system for managing user transfers and sending emails to banks and accountant. The system handles various operations related to bank accounts and transactions.
 
 ## 🚀Features
 - Manage multiple bank transfers.
 - Send emails to banks with cheque information.
-- Approve or reject transactions.
+- Approve or reject transactions from and to accountant.
 - Export transaction data to Excel.
 - Filter transactions by bank.
-
 
 ## Technologies Used
 - .NET 8.0
@@ -22,12 +21,11 @@ This repository contains a system for managing user transfers and sending emails
 - SQL Server
 - SMTP Email Server
 
-
-
 ## Environment Setup
 ### 1. Clone the Repository
 ### 2. Create Configuration File
 Create an appsettings.json file in the root directory with the following structure:
+```json
 
 {
   "ConnectionStrings": {
