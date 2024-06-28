@@ -1,0 +1,114 @@
+﻿@page "/Charts"
+
+
+
+@layout AdminLayout
+
+
+@* 
+@attribute [StreamRendering]
+@using System.Data;
+@using My_Transfers.Models;
+@inject IConfiguration configuration;
+@using Hanssens.Net
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor;
+@using My_Transfers.Class
+@using Blazored.LocalStorage
+@using System.Net.Mail;
+@using System.Net;
+@inject IWebHostEnvironment env
+@inject IMailService MailService
+
+@using System.IO;
+@using Syncfusion.XlsIO
+@using Syncfusion.PdfExport;
+@using Syncfusion.ExcelExport;
+@inject IJSRuntime JSRuntime
+
+<style>
+
+
+    .rz-chart {
+        position: relative;
+        height: 230px;
+    }
+
+</style>
+
+<div class="container hide-on-small ">
+    ">
+    <div class="row">
+        <div class=" col-12 offset-lg-3 my-5 hide-on-small">
+            <RadzenLabel dir="rtl" Style="text-align:center; "> <h3>Transactions Status</h3> </RadzenLabel>
+            <RadzenChart>
+                <RadzenPieSeries Data="@Count" Title="Count" CategoryProperty="Quarter" ValueProperty="Count">
+                    <RadzenSeriesDataLabels Visible="true" />
+                </RadzenPieSeries>
+            </RadzenChart>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public List<Transfers> TRANSC_APPROVED = new List<Transfers>();
+    public int TRANSC_APPROVED_COUNT = 0;
+    public int TRANSC_NOT_APPROVED_COUNT = 0;
+    public int TRANSC_SENT_COUNT = 0;
+    public List<Transfers> TRANSC_NOT_APPROVED = new List<Transfers>();
+    public List<Transfers> TRANSC_SENT = new List<Transfers>();
+    public string _conStr = "";
+    DataItem[] Count;
+    class DataItem
+    {
+        public string Quarter { get; set; }
+        public int Count { get; set; }
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _conStr = configuration["ConnectionStrings:Connection"];
+
+            TRANSC_APPROVED = await RunSQL.RunSQLList<Transfers>("SELECT * FROM Transfers WHERE APPROVAL = 1 AND EMAIL_SENT = 0", _conStr);
+            TRANSC_APPROVED_COUNT = TRANSC_APPROVED.Count();
+
+            TRANSC_NOT_APPROVED = await RunSQL.RunSQLList<Transfers>("SELECT * FROM Transfers WHERE APPROVAL = 0 AND EMAIL_SENT = 0", _conStr);
+            TRANSC_NOT_APPROVED_COUNT = TRANSC_NOT_APPROVED.Count();
+
+            TRANSC_SENT = await RunSQL.RunSQLList<Transfers>("SELECT * FROM Transfers WHERE APPROVAL = 1 AND EMAIL_SENT = 1", _conStr);
+            TRANSC_SENT_COUNT = TRANSC_SENT.Count();
+
+            Count = new DataItem[]
+            {
+            new DataItem { Quarter = "غير موافق", Count = TRANSC_APPROVED_COUNT },
+            new DataItem { Quarter = "موافق", Count = TRANSC_NOT_APPROVED_COUNT },
+            new DataItem { Quarter = "المُرسل", Count = TRANSC_SENT_COUNT }
+            };
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during initialization in OnInitializedAsync: {ex.Message}");
+        }
+    }
+
+
+    bool showDataLabels = false;
+
+    public static readonly NotificationMessage ErrorMSG =
+       new NotificationMessage
+       {
+           Severity = NotificationSeverity.Success,
+           Detail = "هناك خطأ",
+           Duration = 1500,
+           Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+       };
+}
+ *@

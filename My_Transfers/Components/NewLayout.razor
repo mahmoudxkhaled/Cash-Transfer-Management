@@ -1,0 +1,74 @@
+﻿@page "/1"
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Buttons
+@inherits LayoutComponentBase
+
+
+<div id="header" style="height:45px;text-align: center;color:white;background-color:midnightblue;font-size:1.2rem;line-height:45px;">
+    Header
+</div>
+
+
+<SfSidebar @ref="rightSidebarInstance" Width="250px" Position=SidebarPosition.Right @bind-IsOpen="RightToggle">
+
+    <ChildContent >
+
+
+        <ul class="  nav flex-column">
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" rel='nofollow' href="" Match="NavLinkMatch.All">
+                    <span class="oi oi-home" aria-hidden="true"></span> Home
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" rel='nofollow' href="counter">
+                    <span class="oi oi-plus" aria-hidden="true"></span> Counter
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" rel='nofollow' href="fetchdata">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Fetch data
+                </NavLink>
+            </li>
+        </ul>
+    </ChildContent>
+</SfSidebar>
+
+  <div class="main-content" id="maintext"> 
+            <div class="content"> 
+               @Body
+    </div>
+</div>
+
+
+    <div style="margin-top:10px">
+        <SfButton @onclick="ToggleRightSidebar" IsToggle="true" CssClass="e-btn e-info">Right Toggle Sidebar</SfButton>
+    </div>
+
+@code {
+    SfSidebar leftSidebarInstance;
+    SfSidebar rightSidebarInstance;
+    public bool LeftToggle = false;
+    public bool RightToggle = false;
+
+    public void ToggleRightSidebar()
+    {
+        RightToggle = !RightToggle;
+    }
+}
+
+<style>
+    .e-sidebar {
+        background-color: #f8f8f8;
+        color: black;
+    }
+
+    .text-content {
+        font-size: 1.5rem;
+        padding: 3rem;
+    }
+
+    .main > div {
+        padding: 0px !important;
+    }
+</style>

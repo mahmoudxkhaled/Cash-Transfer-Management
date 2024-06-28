@@ -1,0 +1,206 @@
+﻿@using Radzen
+  @inherits LayoutComponentBase
+@*
+<RadzenLayout>
+	<RadzenHeader>
+		<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+			<RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+			<RadzenLabel Text="Transfers" />
+		</RadzenStack>
+	</RadzenHeader>
+	<RadzenSidebar Responsive="false" Style="width: max-content">
+		<RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false">
+			<RadzenPanelMenuItem Text="TransferApproval" Icon="assignment_turned_in
+" Click="@(() => NavigateTo("TransferApproval"))" />
+
+			<RadzenPanelMenuItem Text="TransferRequest" Icon="account_circle
+" Click="@(() => NavigateTo("TransferRequest"))" />
+
+			<RadzenPanelMenuItem Text="ProjectList" Icon="account_balance" Click="@(() => NavigateTo("ProjectList"))" />
+
+			<RadzenPanelMenuItem Text="BankList" Icon="card_travel
+" Click="@(() => NavigateTo("BankList"))" />
+
+
+
+
+		</RadzenPanelMenu>
+	</RadzenSidebar>
+	<RadzenBody Style="background-color:gray;">
+		<div class="rz-p-4">
+
+
+			@if (Body == null)
+			{
+
+				<Trtansfer_Approval />
+			}
+			else
+			{
+				<div id="content" class="p-4 p-md-5 pt-5">
+
+						<RadzenCard>
+							@Body
+						</RadzenCard>
+					</div>
+			}
+		</div>
+
+
+	</RadzenBody>
+
+	<div class="col-md-auto text-md-right  fixed-bottom">
+		<RadzenLabel class="arabic-footer" Text="Smart up Software Solutions, Copyright &copy; 2024">
+		</RadzenLabel>
+	</div>
+</RadzenLayout>  *@
+
+<RadzenDialog />
+<RadzenContent />
+<RadzenTooltip />
+<RadzenNotification />
+
+@* ////////////////////////////////////////////////////////////////////////////////////// *@
+
+
+<RadzenLayout>
+
+	<!doctype html>
+	<html lang="en">
+	<head>
+		<title>Sidebar 04</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="Sidebar/css/style.css">
+
+
+		<style>
+
+			.custom-menu .btn.btn-primary:focus #content {
+				display: none !important;
+			}
+		</style>
+
+	</head>
+
+	<body>
+
+
+
+
+		<RadzenLayout dir="rtl">
+
+			<div class="wrapper d-flex align-items-stretch " style="overflow:auto;">
+
+				<nav id="sidebar">
+					<div class="custom-menu">
+						<button type="button" id="sidebarCollapse" class="btn btn-primary">
+							<i class="fa fa-bars"></i>
+							<span style=" padding-left: 9px;" class="sr-only">Toggle Menu</span>
+						</button>
+					</div>
+					<h1><a class="logo btn-dark">تحويلاتـــى</a></h1>
+					<ul class="list-unstyled components mb-5">
+						<li class="active">
+							<a href="/TransferRequest"><span style=" padding-left: 9px;" class="fa fa-home mr-3"></span> موافقه التحويلات</a>
+						</li>
+
+
+						<li>
+							<a href="/TransferRequest">
+								<span style=" padding-left: 11px;"
+									  class="fa fa-user mr-3"></span> طلبات التحويل
+							</a>
+						</li>
+						<li>
+							<a href="/ProjectList">
+								<span style=" padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> قائمه المشاريع
+							</a>
+						</li>
+						<li>
+							<a href="/BankList"><span style=" padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> قائمه البنوك</a>
+						</li>
+
+					</ul>
+
+
+				</nav>
+
+
+
+
+				<!-- Page Content  -->
+
+				<div id="content" class="p-4 p-md-5 pt-5 " style="overflow:auto;">
+
+					<RadzenCard>
+
+						@Body
+					</RadzenCard>
+
+				</div>
+
+			</div>
+		</RadzenLayout>
+
+
+
+
+		<script src="Sidebar/js/jquery.min.js"></script>
+		<script src="Sidebarjs/popper.js"></script>
+		<script src="Sidebar/js/bootstrap.min.js"></script>
+		<script src="Sidebar/js/main.js"></script>
+	</body>
+</html>
+</RadzenLayout>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@code {
+	void NavigateTo(string page)
+	{
+		NavigationManager.NavigateTo($"/{page}");
+	}
+
+
+	bool sidebarExpanded = true;
+}
+
+@* <style>
+	.outer-wrapper {
+		display: flex;
+	}
+
+	.grid-card {
+		flex: 0 0 auto; /* Ensure cards don't grow or shrink */
+		width: 100%; /* Set a fixed width for each card */
+		margin-right: 16px; /* Optional: Add margin between cards */
+		white-space: nowrap; /* Prevent line breaks within cards */
+	}
+</style> *@

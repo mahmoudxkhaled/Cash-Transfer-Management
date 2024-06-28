@@ -1,0 +1,21 @@
+﻿@page "/Accountant"
+@layout AdminLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using Fluent_Cheqs.Models;
+@inject IConfiguration configuration;
+@using Radzen
+@using Radzen.Blazor;
+
+@using Syncfusion.Blazor.Grids
+ @using Syncfusion.Blazor;
+
+
+<div class="wrapper">
+	<RadzenCard class="grid-card">
+
+		<Transfer_Request />
+
+	</RadzenCard>
+
+</div>

@@ -1,0 +1,41 @@
+﻿@page "/weather"
+@attribute [StreamRendering]
+@using System.Data;
+@using Fluent_Cheqs.Models;
+@inject IConfiguration configuration;
+<PageTitle>Weather</PageTitle>
+
+<h1>Weather</h1>
+
+<p>This component demonstrates showing data.</p>
+
+@if (Dt == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    <FluentDataGrid Items=@Q GridTemplateColumns="1fr 1fr 1fr" TGridItem="Projects">
+        <PropertyColumn Title="Project Id" Property="@C=>PROJECTS" Sortable="true" Align=Align.Start />
+        <PropertyColumn Title="Project Name" Property="PROJECT_NAME" Sortable="true" Align=Align.Center />
+        <PropertyColumn Title="Status" Property="STATUS" Sortable="true" Align=Align.Center />
+    </FluentDataGrid>
+
+}
+
+@code {
+
+
+    public IQueryable<Projects> Q;
+    public DataTable Dt;
+    protected override async Task OnInitializedAsync()
+    {
+
+        string ConStr = configuration["ConnectionStrings:Connection"];
+        Dt = RunSQL.RunSQLDt("SELECT * FROM Projects", ConStr).Result;
+        Q = Dt.AsQueryable<Projects>();
+    }
+
+
+}

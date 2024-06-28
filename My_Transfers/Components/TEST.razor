@@ -1,0 +1,55 @@
+﻿@page "/w"
+@layout CheqsLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using Fluent_Cheqs.Models;
+@inject IConfiguration configuration;
+@using Radzen
+@using Radzen.Blazor;
+
+<div class="wrapper">
+    <RadzenCard class="grid-card">
+        <div class="row">
+            <div class="col-md-12">
+                <RadzenGrid FilterMode="FilterMode.Advanced" @ref="ProjectGrids"
+                            AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true" PageSize="10"
+                            AllowScrolling="true" AllowSorting="true"
+                            Data="@ProjectList"
+                            TItem="Projects"
+                            Value="@ProjectGridRow"
+                            AllowAdd="true">
+                    <Columns>
+                        <RadzenGridColumn TItem="Projects" Property="PROJECT_ID" Title="PROJECT ID" Filterable="true" Width="140px" />
+
+                        <RadzenGridColumn TItem="Projects" Property="PROJECT_NAME" Title="PROJECT NAME" Filterable="true" Width="140px" />
+
+                        <RadzenGridColumn TItem="Projects" Property="STATUS" Title="STATUS" Filterable="true" Width="90px" TextAlign="Radzen.TextAlign.Center" />
+
+
+                    </Columns>
+                </RadzenGrid>
+            </div>
+        </div>
+    </RadzenCard>
+</div>
+
+@code {
+    RadzenGrid<Projects> ProjectGrids;
+    public List<Projects> ProjectList;
+    Projects ProjectGridRow;
+    public List<string> ToolbarItems = new List<string>() { "Search", "Print", "Add", "Edit", "Delete", "Update", "Cancel" };
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        string ConStr = configuration["ConnectionStrings:Connection"];
+        ProjectList = await RunSQL.RunSQLList<Projects>("SELECT * FROM Projects", ConStr);
+
+    }
+
+
+
+}

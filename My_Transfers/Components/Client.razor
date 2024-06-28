@@ -1,0 +1,68 @@
+﻿@page "/Client"
+@layout AdminLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using Fluent_Cheqs.Models;
+@inject IConfiguration configuration;
+@using Radzen
+@using Radzen.Blazor;
+@inject DialogService DialogService
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor;
+
+@* <style>
+    .outer-wrapper {
+        display: flex;
+    }
+
+    .grid-card {
+        flex: 0 0 auto; /* Ensure cards don't grow or shrink */
+        width: 100%; /* Set a fixed width for each card */
+        margin-right: 16px; /* Optional: Add margin between cards */
+        white-space: nowrap; /* Prevent line breaks within cards */
+    }
+</style> *@
+
+<div class="outer-wrapper">
+    <div class="grid-card">
+        <RadzenCard>
+            <Trtansfer_Approval />
+        </RadzenCard>
+    </div>
+</div>
+<div class="outer-wrapper">
+
+    <div class="grid-card">
+        <RadzenCard>
+            <ProjectsList />
+        </RadzenCard>
+    </div>
+</div>
+<div class="outer-wrapper">
+
+    <div class="grid-card">
+        <RadzenCard>
+            <BankList />
+        </RadzenCard>
+        </div>
+    </div>
+    <!-- Add more grid-cards as needed -->
+
+
+@* 
+<RadzenButton class="btn-blue" Style="float: right; margin-right:3px;" Text="Print Report" Click="btnPrintClick" />
+
+	@code {
+
+
+
+
+	private async Task btnPrintClick(MouseEventArgs e)
+	{
+		await DialogService.OpenAsync<ProjectsList>("",
+							new Dictionary<string, object>() { },
+							new DialogOptions() { Width = "700PX", Resizable = true, Draggable = true });
+
+	}
+	} *@

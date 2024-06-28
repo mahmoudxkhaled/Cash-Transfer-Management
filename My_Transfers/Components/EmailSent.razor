@@ -1,0 +1,278 @@
+﻿@page "/EmailSent"
+@layout AdminLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using My_Transfers.Models;
+@inject IConfiguration configuration;
+@using Hanssens.Net
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor;
+@using My_Transfers.Class
+@using Blazored.LocalStorage
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor;
+@using System.Net.Mail;
+@using System.Net;
+@inject IWebHostEnvironment env
+@inject IMailService MailService
+
+@using Syncfusion.Blazor.Grids
+@using System.IO;
+@using Syncfusion.XlsIO
+@using Syncfusion.PdfExport;
+@using Syncfusion.ExcelExport;
+@inject IJSRuntime JSRuntime
+
+
+<div class="rz-p-sm-12 rz-text-align-center">
+    <RadzenLabel Text="اختر بنك" Component="DropDownBindValue" class="col-12" Style="margin-right: 8px; vertical-align: middle; font-size:30px; text-align:center;" />
+    <RadzenDropDown Change="((args)=>ApplyProductNameFilter(args))" @bind-Value=@selectedBankName Data=@distinctBanksNames Style="width: 100%; max-width: 250px; padding-bottom:2px font-size:25px;" />
+</div>
+
+<SfGrid EnableRtl EnableAltRow TValue="TRANSAC_TO_BANK" AllowSorting="true" GridLines="GridLine.Both" DataSource="@AllTranscsList" @ref="TransferGrid" Toolbar=@ToolbarItems
+         AllowExcelExport="true"
+         AllowPdfExport="true"
+         AllowPaging=true>
+     <GridPageSettings PageSize="9" />
+
+     <GridEditSettings AllowAdding="true"
+                       AllowEditing="true"
+                       AllowDeleting="true"
+                       Mode="@Syncfusion.Blazor.Grids.EditMode.Batch">
+
+     </GridEditSettings>
+
+
+     <GridEvents TValue="TRANSAC_TO_BANK" OnBatchSave="OnCompleteSaveBatch"></GridEvents>
+
+
+     <GridColumns>
+
+         <GridColumn Field=@nameof(TRANSAC_TO_BANK.EMAIL_SENT ) DisplayAsCheckBox HeaderText="تم الارسال" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+         <GridColumn AllowEditing="false" Field=@nameof(TRANSAC_TO_BANK.TRANSFER_CODE) HeaderText="رقم التحويله" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+         <GridColumn AllowEditing="false" Field=@nameof(TRANSAC_TO_BANK.ACC_NAME) HeaderText="اسم المُرسل" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+         <GridColumn AllowEditing="false" Field=@nameof(TRANSAC_TO_BANK.CREDITOR_NAME) HeaderText="اسم المُرسل اليه" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+
+
+         <GridColumn AllowEditing="false" Field=@nameof(TRANSAC_TO_BANK.BANK_NAME ) HeaderText="اسم البنك" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px">
+
+
+         </GridColumn>
+
+         @* <GridColumn AllowEditing="false" Field=@nameof(TRANSAC_TO_BANK.APPROVAL ) DisplayAsCheckBox HeaderText="موافقه" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn> *@
+
+
+     </GridColumns>
+
+ </SfGrid>
+
+
+
+
+
+
+
+
+
+
+
+
+ @code {
+    public List<string> ToolbarItems = new List<string>() { "Update", "Cancel" };
+
+    public SfGrid<TRANSAC_TO_BANK> TransferGrid = new();
+    private string exportFileName { get; set; } = "BankTransaction";
+    private bool exporting = false;
+    public string _conStr = "";
+    private MailRequest mailRequest = new MailRequest();
+
+    private SfGrid<TRANSAC_TO_BANK> DefaultGrid;
+    private bool isExportSuccess = false;
+
+    public List<TRANSAC_TO_BANK> AllTranscsList = new List<TRANSAC_TO_BANK>();
+    private List<TRANSAC_TO_BANK> filteredTransc = new List<TRANSAC_TO_BANK>();
+    public List<Banks> BanksList;
+    private List<string> distinctBanksNames = new List<string>();
+    private List<string> distinctBanksEmails = new List<string>();
+
+    private string selectedBankName = "";
+    private string selectedBankEmail = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _conStr = configuration["ConnectionStrings:Connection"];
+
+            AllTranscsList = await RunSQL.RunSQLList<TRANSAC_TO_BANK>("SELECT * FROM TRANSAC_TO_BANK WHERE APPROVAL = 1 AND EMAIL_SENT = 1", _conStr);
+
+            // Fetch list of banks
+            BanksList = await RunSQL.RunSQLList<Banks>("SELECT * FROM BANKS", _conStr);
+
+            distinctBanksNames = AllTranscsList.Select(p => p.BANK_NAME).Distinct().ToList();
+            selectedBankName = distinctBanksNames.FirstOrDefault();
+
+            distinctBanksEmails = BanksList.Select(p => p.EMAIL).Distinct().ToList();
+
+            mailRequest.To = BanksList
+                .Where(b => b.BANK_NAME == selectedBankName)
+                .Select(e => e.EMAIL)
+                .FirstOrDefault();
+
+            filteredTransc = AllTranscsList.Where(p => p.BANK_NAME == selectedBankName).ToList();
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during initialization in OnInitializedAsync: {ex.Message}");
+        }
+    }
+
+
+    private async Task OnCompleteSaveBatch(BeforeBatchSaveArgs<TRANSAC_TO_BANK> args)
+    {
+        try
+        {
+            var edited = args.BatchChanges.ChangedRecords;
+
+            foreach (var item in edited)
+            {
+                await UpdateRecord(item);
+            }
+
+            await OnInitializedAsync();
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during batch save: {ex.Message}");
+
+        }
+    }
+
+
+    private async Task UpdateRecord(TRANSAC_TO_BANK updatedTransfer)
+    {
+        try
+        {
+            string updateQuery = $"EXEC UpdateBalancesBasedOnFalseSentEmails {updatedTransfer.ID}";
+
+            await RunSQL.RunSQLNonQuery(updateQuery, _conStr);
+            _NotificationService.Notify(MessageSucces);
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during record update: {ex.Message}");
+         
+        }
+    }
+
+
+    private async Task ApplyProductNameFilter(object args)
+    {
+        try
+        {
+            selectedBankName = args?.ToString() ?? string.Empty;
+            Console.WriteLine(args);
+
+            if (!string.IsNullOrEmpty(selectedBankName))
+            {
+                filteredTransc = AllTranscsList.Where(p => p.BANK_NAME == selectedBankName).ToList();
+
+                mailRequest.To = BanksList
+                    .Where(b => b.BANK_NAME == selectedBankName)
+                    .Select(e => e.EMAIL)
+                    .FirstOrDefault();
+            }
+            else
+            {
+                filteredTransc = AllTranscsList.ToList();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during applying product name filter: {ex.Message}");
+        }
+    }
+
+
+
+    public static readonly NotificationMessage MessageSucces =
+        new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Detail = "تمت العمليه بنجاح",
+                Duration = 1500,
+                Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+            };
+
+    public static readonly NotificationMessage ErrorMSG =
+ new NotificationMessage
+ {
+     Severity = NotificationSeverity.Success,
+     Detail = "هناك خطأ",
+     Duration = 1500,
+     Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+ };
+
+}
+
+
+
+<style>
+
+    .custom-textarea {
+        font-size: 12px;
+    }
+
+    .e-toolbar {
+        padding: 10px;
+        text-align: center;
+    }
+
+    .e-grid .e-toolbar .e-tbar-btn .e-icons,
+    .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn {
+        background: #add8e6;
+    }
+
+    .e-toolbar.e-control[class*=e-toolbar] {
+        text-align: center;
+    }
+
+    .e-toolbar .e-tbar-btn-text, .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn-text {
+        display: none;
+    }
+    /*
+        .e-toolbar.e-rtl .e-toolbar-items:not(.e-tbar-pos) .e-toolbar-item:first-child {
+            margin-left: 0;
+            margin-right: 0;
+        } */
+
+    .e-toolbar .e-toolbar-item .e-tbar-btn .e-icons.e-btn-icon {
+        margin: 0;
+        min-width: 12px;
+        width: auto;
+        font-size: 13px;
+        line-height: 14px;
+    }
+
+    .e-grid.e-wrap .e-columnheader .e-headercelldiv, .e-grid.e-wrap .e-columnheader .e-headercell.e-fltr-icon .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercell.e-fltr-icon .e-headercelldiv {
+        margin-bottom: 2px;
+        margin-top: 0;
+        margin-left: -40px;
+    }
+
+    span.e-headertext {
+        margin-left: -36px;
+    }
+</style>

@@ -1,0 +1,419 @@
+﻿@page "/"
+
+@layout LoginLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using My_Transfers.Models;
+@inject IConfiguration configuration;
+@using Hanssens.Net
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor;
+@using My_Transfers.Class
+@using Blazored.LocalStorage
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+
+@if (isLoading)
+{
+
+    <div style="align-items:center" class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+}
+else
+{
+    <div class="loginBox" dir="rtl">
+
+
+
+
+
+        @if (LoginSuccess)
+        {
+
+            <div style="align-items:center" class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+        }
+        else
+        {
+
+            <img class="user" src="/login.png" height="100px" width="100px">
+        }
+        <h3>تحويلاتــى</h3>
+        <form @onsubmit="HandleLogin">
+            <div class="inputBox">
+                <input id="uname" type="text" @bind="userInput.USER_NAME" placeholder="اسم المستخدم">
+                <input id="pass" type="password" @bind="userInput.PASSWORD" placeholder="كلمه السر">
+            </div>
+            <input type="submit" name="" value="دخول">
+
+        </form>
+
+
+
+    </div>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p class="error" style="color:red;">@ErrorMessage</p>
+    }
+}
+
+
+@code {
+
+    public string ConStr => _conStr;
+
+    bool isLoading = true;
+    async Task LoadContent()
+    {
+
+        isLoading = false;
+    }
+
+    [Inject] private ILocalStorageService LocalStorage { get; set; }
+
+    private bool LoginSuccess = false;
+
+    public string _conStr = "";
+    public string ErrorMessage = "";
+    public List<Login> LoginList;
+    private Login userInput = new Login();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _conStr = configuration["ConnectionStrings:Connection"];
+        LoginList = await RunSQL.RunSQLList<Login>("SELECT * FROM Login", _conStr);
+
+        StateHasChanged();
+        await LoadContent();
+    }
+
+
+
+    public async Task HandleLogin()
+    {
+        try
+        {
+            var user = LoginList.FirstOrDefault(u => u.USER_NAME ==  userInput.USER_NAME    && u.PASSWORD ==userInput.PASSWORD  );
+
+            if (user != null)
+            {
+                UserService.UserRole = user.USER_NAME == "admin" ? "admin" : "user";
+                LoginSuccess = true;
+
+
+
+                if (user.USER_NAME == "admin")
+                {
+                    await Task.Run(async () =>
+                                        {
+
+                                            await Task.Delay(500);
+                                        }).ConfigureAwait(true);
+
+                    NavigationManager.NavigateTo("/TransferApproval");
+                    await localStorage.SetItemAsync("LOGEDIN", true);
+
+                }
+                else
+                {
+                    await Task.Run(async () =>
+                                        {
+
+                                            await Task.Delay(500);
+                                        }).ConfigureAwait(true);
+                    NavigationManager.NavigateTo("/TransferRequest");
+                    await localStorage.SetItemAsync("LOGEDIN", true);
+
+                }
+            }
+            else
+            {
+
+                Console.WriteLine("Invalid login credentials");
+                ErrorMessage = "كلمه السر او اسم المستخدم غير صحيح";
+                await Task.Delay(2000);
+                ErrorMessage = "";
+
+            }
+
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during login: {ex.Message}");
+        }
+    }
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (firstRender)
+            {
+                // if (await localStorage.ContainKeyAsync("LOGEDIN"))
+                // {
+                // 	var checklogin = await localStorage.GetItemAsync<bool>("LOGEDIN");
+                // 	if (checklogin)
+                // 	{
+                // 		NavigationManager.NavigateTo("/");
+                // 	}
+                // }
+            }
+        }
+    }
+
+
+
+    public static readonly NotificationMessage ErrorMSG =
+     new NotificationMessage
+         {
+             Severity = NotificationSeverity.Success,
+             Detail = "هناك خطأ",
+             Duration = 1500,
+             Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+         };
+}
+
+
+<style>
+
+
+
+
+    body {
+        margin: 0;
+        padding: 0;
+        /* background: url(https://i.ibb.co/VQmtgjh/6845078.png) no-repeat; */
+        height: 100vh;
+        background: url(/backgroundlogin.png) no-repeat;
+        font-family: sans-serif;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        overflow: hidden
+    }
+
+    @@media screen and (max-width: 600px;) {
+        body {
+            background-size: cover;
+            : fixed
+        }
+    }
+
+    #particles-js {
+        height: 100%
+    }
+
+    .loginBox {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        width: 350px;
+        min-height: 200px;
+        background: rgba(0, 0, 0, 0.6); /* Set the opacity value here (e.g., 0.7 for 70% opacity) */
+        border-radius: 10px;
+        padding: 40px;
+        box-sizing: border-box
+    }
+
+    .user {
+        margin: 0 auto;
+        display: block;
+        margin-bottom: 20px
+    }
+
+    h3 {
+        margin: 0;
+        padding: 0 0 20px;
+        color: #2f89fc;
+        text-align: center
+    }
+
+    .loginBox input {
+        width: 100%;
+        margin-bottom: 20px
+    }
+
+        .loginBox input[type="text"], .loginBox input[type="password"] {
+            border: none;
+            border-bottom: 2px solid #262626;
+            outline: none;
+            height: 40px;
+            color: #fff;
+            background: transparent;
+            font-size: 16px;
+            padding-left: 20px;
+            box-sizing: border-box
+        }
+
+            .loginBox input[type="text"]:hover, .loginBox input[type="password"]:hover {
+                color: #42F3FA;
+                border: 1px solid #42F3FA;
+                box-shadow: 0 0 5px rgba(0,255,0,.3), 0 0 10px rgba(0,255,0,.2), 0 0 15px rgba(0,255,0,.1), 0 2px 0 black
+            }
+
+            .loginBox input[type="text"]:focus, .loginBox input[type="password"]:focus {
+                border-bottom: 2px solid #42F3FA
+            }
+
+    .inputBox {
+        position: relative
+    }
+
+        .inputBox span {
+            position: absolute;
+            top: 10px;
+            color: #262626
+        }
+
+    .loginBox input[type="submit"] {
+        border: none;
+        outline: none;
+        height: 40px;
+        font-size: 16px;
+        background: #2f89fc;
+        color: #fff;
+        border-radius: 20px;
+        cursor: pointer
+    }
+
+    .loginBox a {
+        color: #262626;
+        font-size: 14px;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+        display: block
+    }
+
+    a:hover {
+        color: #00ffff
+    }
+
+    p {
+        color: #0000ff
+    }
+
+
+    img {
+        animation: spinning-logocat 1s;
+        border-radius: 50%;
+    }
+
+    @@keyframes spinning-logocat {
+        50% {
+            transform: rotateY(180deg);
+        }
+    }
+
+    @@keyframes spin-dat-cat {
+        50% {
+            transform: rotateY(180deg);
+        }
+    }
+
+
+    .lds-spinner {
+        color: official;
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 80px;
+        left: -34%;
+    }
+
+
+        .lds-spinner div {
+            transform-origin: 40px 40px;
+            animation: lds-spinner 1.2s linear infinite;
+        }
+
+            .lds-spinner div:after {
+                content: " ";
+                display: block;
+                position: absolute;
+                top: 3px;
+                left: 37px;
+                width: 6px;
+                height: 18px;
+                border-radius: 20%;
+                background: #fff;
+            }
+
+            .lds-spinner div:nth-child(1) {
+                transform: rotate(0deg);
+                animation-delay: -1.1s;
+            }
+
+            .lds-spinner div:nth-child(2) {
+                transform: rotate(30deg);
+                animation-delay: -1s;
+            }
+
+            .lds-spinner div:nth-child(3) {
+                transform: rotate(60deg);
+                animation-delay: -0.9s;
+            }
+
+            .lds-spinner div:nth-child(4) {
+                transform: rotate(90deg);
+                animation-delay: -0.8s;
+            }
+
+            .lds-spinner div:nth-child(5) {
+                transform: rotate(120deg);
+                animation-delay: -0.7s;
+            }
+
+            .lds-spinner div:nth-child(6) {
+                transform: rotate(150deg);
+                animation-delay: -0.6s;
+            }
+
+            .lds-spinner div:nth-child(7) {
+                transform: rotate(180deg);
+                animation-delay: -0.5s;
+            }
+
+            .lds-spinner div:nth-child(8) {
+                transform: rotate(210deg);
+                animation-delay: -0.4s;
+            }
+
+            .lds-spinner div:nth-child(9) {
+                transform: rotate(240deg);
+                animation-delay: -0.3s;
+            }
+
+            .lds-spinner div:nth-child(10) {
+                transform: rotate(270deg);
+                animation-delay: -0.2s;
+            }
+
+            .lds-spinner div:nth-child(11) {
+                transform: rotate(300deg);
+                animation-delay: -0.1s;
+            }
+
+            .lds-spinner div:nth-child(12) {
+                transform: rotate(330deg);
+                animation-delay: 0s;
+            }
+
+    @@keyframes lds-spinner {
+        0% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0;
+        }
+    }
+
+</style>

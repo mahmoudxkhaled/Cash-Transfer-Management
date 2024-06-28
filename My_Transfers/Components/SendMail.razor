@@ -1,0 +1,573 @@
+﻿@page "/Mail"
+@layout AdminLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using My_Transfers.Models;
+@inject IConfiguration configuration;
+@using Hanssens.Net
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor;
+@using My_Transfers.Class
+@using Blazored.LocalStorage
+@using System.Net.Mail;
+@using System.Net;
+@inject IWebHostEnvironment env
+@inject IMailService MailService
+
+@using System.IO;
+@using Syncfusion.XlsIO
+@using Syncfusion.PdfExport;
+@using Syncfusion.ExcelExport;
+@inject IJSRuntime JSRuntime
+
+
+
+
+
+<div class="rz-p-sm-12 rz-text-align-center">
+    <RadzenLabel Text="اختر بنك" Component="DropDownBindValue" class="col-12" Style="margin-right: 8px; vertical-align: middle; font-size:30px; text-align:center;" />
+    <RadzenDropDown Change="((args)=>ApplyProductNameFilter(args))" @bind-Value=@selectedBankName Data=@distinctBanksNames Style="width: 100%; max-width: 250px;  padding-bottom:2px; font-size:25px;" />
+</div>
+
+<SfGrid EnableRtl ID="Grid" @ref="DefaultGrid" DataSource="@filteredTransc" GridLines="GridLine.Both" AllowExcelExport="true" AllowPaging="true"
+         AllowResizing="true"
+         Toolbar="@(new List<string>() {  })" AllowSelection="true">
+     <GridEvents TValue="TRANSAC_TO_BANK"></GridEvents>
+     <GridSelectionSettings Type="SelectionType.Multiple"></GridSelectionSettings>
+     <GridColumns>
+         <GridPageSettings PageSize="9" />
+
+
+         <GridColumn Field=@nameof(TRANSAC_TO_BANK.TRANSFER_CODE) HeaderText="رقم التحويله" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+
+         <GridColumn Field=@nameof(TRANSAC_TO_BANK.CREDITOR_NAME) HeaderText="اسم المرسل اليه" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="250px"></GridColumn>
+
+
+         <GridColumn Field=@nameof(TRANSAC_TO_BANK.ACC_NAME) HeaderText="اسم المرسل" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="250px"></GridColumn>
+
+         <GridColumn Field=@nameof(TRANSAC_TO_BANK.BANK_NAME ) HeaderText="اسم البنك" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+         <GridColumn DisplayAsCheckBox Field=@nameof(TRANSAC_TO_BANK.APPROVAL ) HeaderText="موافقه" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+     </GridColumns>
+
+ </SfGrid>
+
+
+
+
+
+ <div class="content">
+
+     <div class="">
+         <div class="row align-items-stretch justify-content-center no-gutters">
+             @* <h3 class="text-center" style="padding-top:15px">Send Email</h3> *@
+             <RadzenLabel Text="ارسال بريد الكتروني" Component="DropDownBindValue" class="col-12" Style="padding:10px; margin-right: 8px; vertical-align: middle; font-size:25px; text-align:center;" />
+             <RadzenCard>
+
+                 <div class="col-md-12 form-group mb-3">
+                     <RadzenText Style="text-align:right" TextStyle="TextStyle.Body1" TagName="TagName.H3">اسم الملف المرفق</RadzenText>
+                     <RadzenTextBox @bind-Value="exportFileName" Placeholder="mailexample@gmail.com" class="w-100 custom-textarea" aria-label="TextBox with placeholder" />
+                 </div>
+
+                 <div class="col-md-12 form-group mb-3">
+                     <RadzenText Style="text-align:right" TextStyle="TextStyle.Body1" TagName="TagName.H3">عنوان البريد الالكتروني</RadzenText>
+                     <RadzenTextBox Style="width: 100%;" @bind-Value="mailRequest.Subject" class="w-100 custom-textarea" aria-label="Default TextBox" />
+                 </div>
+
+                 <div class="col-md-12 form-group mb-3">
+                     @* 		<RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H3">To</RadzenText>
+                    <RadzenTextBox @bind-Value="mailRequest.To" Placeholder="mailexample@gmail.com" class="w-100 custom-textarea" aria-label="TextBox with placeholder" />
+                    *@
+
+                     <RadzenText Style="text-align:right" TextStyle="TextStyle.Body1" TagName="TagName.H3">البريد الالكتروني المُرسل اليه</RadzenText>
+
+                     <RadzenDropDown @bind-Value=@mailRequest.To class="w-100 custom-textarea" Data=@distinctBanksEmails Style="width: 100%; font-size:25px;padding-top:2px; " />
+
+
+
+
+
+                 </div>
+
+                 <div class="col-md-12 form-group mb-3">
+                     <RadzenText Style="text-align:right" TextStyle="TextStyle.Body1" TagName="TagName.H3" class="col-form-label">الرساله</RadzenText>
+                     <RadzenTextArea @bind-Value="mailRequest.Body" Placeholder="اكتب هنا ..." class="w-100 custom-textarea" aria-label="TextArea with placeholder" />
+
+                 </div>
+
+                 <div class=" form-group text-center">
+                     @* 	<input type="submit" @onclick="SendMessage" value="Send" class="btn btn-block btn-primary rounded-0 py-2 px-4">
+                    <span class="submitting"></span> *@
+
+
+                     <Syncfusion.Blazor.Buttons.SfButton style="text-align:center; " OnClick="ExcelExport" Content=" ارسال"></Syncfusion.Blazor.Buttons.SfButton>
+
+
+
+
+
+
+                 </div>
+                 @* 			@if (isExportSuccess)
+                {
+                <div id="form-message-success" style="color: green; text-align:center;">
+                Your Email sent Successfully, Thank You!
+                </div>
+                } *@
+             </RadzenCard>
+
+
+
+         </div>
+     </div>
+
+ </div>
+
+
+
+
+
+
+
+ @code {
+    private string exportFileName { get; set; } = "BankTransaction";
+
+    private bool exporting = false;
+    public string _conStr = "";
+
+    private MailRequest mailRequest = new MailRequest();
+
+
+    private SfGrid<TRANSAC_TO_BANK> DefaultGrid;
+
+    private bool isExportSuccess = false;
+
+
+    // _NotificationService.Notify(ErrorMSG);
+
+
+    public async Task ExcelExport()
+    {
+        ExcelEngine excelEngine = null;
+        try
+        {
+            StateHasChanged();
+            excelEngine = new ExcelEngine();
+            IApplication application = excelEngine.Excel;
+            application.DefaultVersion = ExcelVersion.Excel2013;
+            IWorkbook workbook = application.Workbooks.Create(1);
+            IWorksheet worksheet = workbook.Worksheets[0];
+            // worksheet.ShowRow(1, false);
+            // worksheet.SetColumnWidth(1, 20);
+
+            StateHasChanged();
+
+            ExcelExportProperties excelProperties = new ExcelExportProperties();
+            var selected = await DefaultGrid.GetSelectedRecords();
+
+            if (selected.Count() > 0)
+            {
+                excelProperties.DataSource = selected;
+                IList<TRANSAC_TO_BANK> reports = selected;
+                worksheet.ImportData(reports, 2, 1, true);
+                await RunUpdateQuery(selected);
+                _NotificationService.Notify(InProgress);
+
+            }
+            else
+            {
+                excelProperties.DataSource = filteredTransc;
+                IList<TRANSAC_TO_BANK> reports = filteredTransc;
+                worksheet.ImportData(reports, 2, 1, true);
+                await RunUpdateQuery(filteredTransc);
+                _NotificationService.Notify(InProgress);
+
+            }
+
+            worksheet.DeleteRow(1);
+            worksheet.DeleteColumn(1);
+            worksheet.DeleteColumn(15);
+            worksheet.DeleteColumn(14);
+            // worksheet.PageSetup.LeftHeader = "&KFF0000 Left Header";
+            // worksheet.PageSetup.CenterHeader = "&KFF0000 Center Header";
+            // worksheet.PageSetup.RightHeader = "&KFF0000 Right Header";
+            // worksheet.PageSetup.LeftFooter = "&B &18 &K0000FF Left Footer";
+            // worksheet.PageSetup.CenterFooter = "&G";
+            // worksheet.PageSetup.RightFooter = "&P &K0000FF Right Footer";
+
+
+            //Defining body style
+
+            worksheet.SetRowHeight(1, 20);
+            IStyle bodyStyle = workbook.Styles.Add("BodyStyle");
+            bodyStyle.BeginUpdate();
+            bodyStyle.Color = Syncfusion.Drawing.Color.FromArgb(239, 243, 247);
+            bodyStyle.Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+            bodyStyle.Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+            bodyStyle.Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+            bodyStyle.Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.Thin;
+            bodyStyle.EndUpdate();
+
+            //Apply Body Style
+            worksheet.UsedRange.CellStyle = bodyStyle;
+
+            //Defining Header style
+            IStyle headerStyle = workbook.Styles.Add("HeaderStyle");
+            headerStyle.BeginUpdate();
+            headerStyle.Color = Syncfusion.Drawing.Color.FromArgb(160, 196, 245);
+            headerStyle.Font.Bold = true;
+            headerStyle.Font.Size = 14;
+            headerStyle.Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+            headerStyle.Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+            headerStyle.Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+            headerStyle.Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.Thin;
+            headerStyle.EndUpdate();
+            worksheet.Rows[0].CellStyle = headerStyle;
+
+            // worksheet.UsedRange.WrapText = true;
+
+
+            //Replaces the given string with another string
+            worksheet.Replace("TRANSFER_CODE", "Instruction ID");
+            worksheet.Replace("CREDITOR_NAME", "Creditor Name");
+            worksheet.Replace("CREDITOR_ACC_NUM", "Creditor Account Number");
+            worksheet.Replace("CREDITOR_ACC_TYPE", "Creditor Account Type");
+            worksheet.Replace("BANK_NAME", "Creditor Bank");
+            worksheet.Replace("BRANCH", "Creditor Bank Branch");
+            worksheet.Replace("ACC_NAME", "Debtor Name");
+            worksheet.Replace("ACC_NUM", "Debtor Account Number");
+            worksheet.Replace("ACC_TYPE", "Debtor Account Type");
+            worksheet.Replace("AMOUNT", "Transaction Amount");
+            worksheet.Replace("TRANSC_PURPOSE", "Transaction Amount");
+            worksheet.Replace("PURPOSE_REMITTANCE_INFORMATION", "Remittance Information");
+            worksheet.Replace("DUE_DATE", "Date");
+
+            worksheet.UsedRange.AutofitColumns();
+
+
+            int amountColumnIndex = 10; // Assuming the "Amount" column is in the second column (zero-based index)
+            int lastRow = worksheet.UsedRange.Rows.Count(); // +1 to account for the offset
+                                                            // worksheet.Range[$"J{lastRow + 1}"].Formula = $"=SUM(J2,J{lastRow})";
+                                                            // string formula = worksheet[$"J{lastRow + 1}"].Formula;
+            worksheet.Range[$"J{lastRow + 1}"].CellStyle.Color = Syncfusion.Drawing.Color.FromArgb(0, 176, 240);
+            // worksheet.Range[$"J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+            // worksheet.Range[$"J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+            // worksheet.Range[$"J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+            // worksheet.Range[$"J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.Thin;
+            worksheet.Range[$"J{lastRow + 1}"].CellStyle.Font.Bold = true;
+            worksheet.Range[$"J{lastRow + 1}"].Text = $"{totalAmount}";
+
+            worksheet.Range[$"A{lastRow + 1}:I{lastRow + 1}"].Merge();
+            worksheet.Range[$"A{lastRow + 1}"].Text = "الاجمالى";
+            worksheet.Range[$"A{lastRow + 1}"].CellStyle.Color = Syncfusion.Drawing.Color.FromArgb(160, 196, 245);
+            worksheet.Range[$"A{lastRow + 1}: J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+            worksheet.Range[$"A{lastRow + 1}: J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+            worksheet.Range[$"A{lastRow + 1}: J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+            worksheet.Range[$"A{lastRow + 1}: J{lastRow + 1}"].Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.Thin;
+            worksheet.Range[$"A{lastRow + 1}: J{lastRow + 1}"].CellStyle.Font.Bold = true;
+
+
+
+            worksheet.UsedRange.CellStyle.ReadingOrder = ExcelReadingOrderType.RightToLeft;
+            worksheet.UsedRange.CellStyle.HorizontalAlignment = ExcelHAlign.HAlignCenter;
+            worksheet.UsedRange.CellStyle.VerticalAlignment = ExcelVAlign.VAlignCenter;
+
+
+
+            string wwwrootPath = env.WebRootPath;
+            string folderPath = Path.Combine(wwwrootPath, "ExcelExports");
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            string fileName = $"{exportFileName}.xlsx";
+            string filePath = Path.Combine(folderPath, fileName);
+
+
+            FileStream stream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite);
+            workbook.SaveAs(stream);
+            stream.Dispose();
+            workbook.Close();
+
+            // using (FileStream fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            // {
+            // 	workbook.SaveAs(fileStream);
+            // }
+            // workbook.Close();
+
+            mailRequest.attachmentPath = filePath;
+
+            await MailService.SendAsync(mailRequest);
+            OnInitializedAsync();
+            // File.Delete(filePath);
+            await Task.Delay(7000);
+            _NotificationService.Notify(MessageSucces);
+            await DefaultGrid.Refresh();
+            StateHasChanged();
+
+        }
+
+        catch (UnauthorizedAccessException uae)
+        {
+            await Task.Delay(1000);
+
+            Console.WriteLine($"Unauthorized Access Exception: {uae.Message}");
+            _NotificationService.Notify(ErrorSent);
+        }
+        catch (IOException ioe)
+        {
+            await Task.Delay(1000);
+
+            Console.WriteLine($"IO Exception: {ioe.Message}");
+            _NotificationService.Notify(ErrorSent);
+        }
+        catch (Exception ex)
+        {
+            await Task.Delay(1000);
+
+            Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            _NotificationService.Notify(ErrorSent);
+        }
+
+        finally
+        {
+
+            if (excelEngine != null)
+            {
+                excelEngine.Dispose();
+
+            }
+        }
+    }
+
+    decimal? totalAmount = 0;
+    private async Task RunUpdateQuery(List<TRANSAC_TO_BANK> transactions)
+    {
+        try
+        {
+            totalAmount = 0;
+
+            foreach (var transc in transactions)
+            {
+                string updateQuery = $"EXEC UpdateBalancesBasedOnApproval {transc.ID}";
+                await RunSQL.RunSQLNonQuery(updateQuery, _conStr);
+                totalAmount += transc.AMOUNT;
+            }
+        }
+
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred during update query: {ex.Message}");
+            _NotificationService.Notify(ErrorMSG);
+            throw;
+        }
+    }
+
+
+
+
+    public List<TRANSAC_TO_BANK> transfers { get; set; }
+
+    public List<TRANSAC_TO_BANK> AllTranscsList = new List<TRANSAC_TO_BANK>();
+    // public List<Transfers> TransfresList = new List<Transfers>();
+    private List<TRANSAC_TO_BANK> filteredTransc = new List<TRANSAC_TO_BANK>();
+    public List<Banks> BanksList;
+    private List<string> distinctBanksNames = new List<string>();
+    private List<string> distinctBanksEmails = new List<string>();
+
+    private string selectedBankName = "";
+    private string selectedBankEmail = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _conStr = configuration["ConnectionStrings:Connection"];
+
+            AllTranscsList = await RunSQL.RunSQLList<TRANSAC_TO_BANK>("SELECT * FROM TRANSAC_TO_BANK WHERE APPROVAL = 1 AND EMAIL_SENT = 0", _conStr);
+            BanksList = await RunSQL.RunSQLList<Banks>("SELECT * FROM BANKS", _conStr);
+
+            distinctBanksNames = AllTranscsList.Select(p => p.BANK_NAME).Distinct().ToList();
+            selectedBankName = distinctBanksNames.FirstOrDefault();
+
+            distinctBanksEmails = BanksList.Select(p => p.EMAIL).Distinct().ToList();
+
+            mailRequest.To = BanksList
+                .Where(b => b.BANK_NAME == selectedBankName)
+                .Select(e => e.EMAIL)
+                .FirstOrDefault();
+
+            filteredTransc = AllTranscsList.Where(p => p.BANK_NAME == selectedBankName).ToList();
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during component initialization: {ex.Message}");
+
+        }
+    }
+
+
+
+
+    private async Task ApplyProductNameFilter(object args)
+    {
+        try
+        {
+            selectedBankName = args.ToString();
+            Console.WriteLine(args);
+
+            if (!string.IsNullOrEmpty(selectedBankName))
+            {
+                filteredTransc = AllTranscsList.Where(p => p.BANK_NAME == selectedBankName).ToList();
+
+                mailRequest.To = BanksList
+                    .Where(b => b.BANK_NAME == selectedBankName)
+                    .Select(e => e.EMAIL)
+                    .FirstOrDefault();
+            }
+            else
+            {
+                filteredTransc = AllTranscsList.ToList();
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during filtering: {ex.Message}");
+
+        }
+    }
+
+
+
+
+    public static readonly NotificationMessage MessageSucces =
+        new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Detail = "تم الارسال بنجاح , شكراً",
+                Duration = 1500,
+                Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+
+            };
+
+    public static readonly NotificationMessage InProgress =
+    new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Detail = "  . . . جارى الارسال ",
+            Duration = 1500,
+            Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+        };
+
+    public static readonly NotificationMessage ErrorSent =
+    new NotificationMessage
+        {
+
+            Severity = NotificationSeverity.Error,
+            Detail = "هناك خطأ فى الارسال, الرجاء المحاوله مره اخرى",
+            Duration = 1500,
+            Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+        };
+
+
+
+    public static readonly NotificationMessage ErrorMSG =
+     new NotificationMessage
+         {
+             Severity = NotificationSeverity.Success,
+             Detail = "هناك خطأ",
+             Duration = 1500,
+             Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+         };
+
+}
+
+
+
+
+
+
+
+
+<style>
+
+    .custom-textarea {
+        font-size: 12px; /* Adjust the font size as needed */
+    }
+
+
+    .e-toolbar {
+        min-height: 0px;
+    }
+
+    .rz-multiselect-label-container, .rz-dropdown-label {
+        margin-top: 5px;
+        font-size: 12px;
+    }
+
+
+    .e-grid .e-toolbar .e-tbar-btn .e-icons,
+    .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn {
+        background: #add8e6;
+    }
+
+    .e-toolbar.e-control[class*=e-toolbar] {
+        text-align: center;
+    }
+
+    .e-toolbar .e-tbar-btn-text, .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn-text {
+        display: none;
+    }
+
+    /* 	.e-toolbar.e-rtl .e-toolbar-items:not(.e-tbar-pos) .e-toolbar-item:first-child {
+                                        margin-left: 0;
+                                        margin-right: 0;
+                                    } */
+
+    .e-toolbar .e-toolbar-item .e-tbar-btn .e-icons.e-btn-icon {
+        margin: 0;
+        min-width: 12px;
+        width: auto;
+        font-size: 13px;
+        line-height: 14px;
+    }
+
+    .e-grid.e-wrap .e-columnheader .e-headercelldiv, .e-grid.e-wrap .e-columnheader .e-headercell.e-fltr-icon .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercell.e-fltr-icon .e-headercelldiv {
+        margin-bottom: 2px;
+        margin-top: 0;
+        margin-left: -40px;
+    }
+
+
+    span.e-headertext {
+        margin-left: -36px;
+    }
+</style>
+
+<script>
+
+    const button = document.querySelector('.button');
+    const submit = document.querySelector('.submit');
+
+    function toggleClass() {
+        this.classList.toggle('active');
+    }
+
+    function addClass() {
+        this.classList.add('finished');
+    }
+
+    button.addEventListener('click', toggleClass);
+    button.addEventListener('transitionend', toggleClass);
+    button.addEventListener('transitionend', addClass);
+</script>

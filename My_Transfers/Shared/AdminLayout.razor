@@ -1,0 +1,511 @@
+﻿@using My_Transfers.Class
+@using Radzen
+@inherits LayoutComponentBase
+@inject UserService UserService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+<RadzenDialog />
+<RadzenContent />
+<RadzenTooltip />
+<RadzenNotification />
+
+
+
+<RadzenLayout dir="rtl">
+
+
+    <!doctype html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="Sidebar/css/style.css">
+
+        <style>
+
+            .Btn {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                width: 45px;
+                height: 45px;
+                border: none;
+                border-radius: 50%;
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+                transition-duration: .3s;
+                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
+                background-color: rgb(255, 65, 65);
+            }
+
+            /* plus sign */
+            .sign {
+                width: 100%;
+                transition-duration: .3s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .sign svg {
+                    width: 17px;
+                }
+
+                    .sign svg path {
+                        fill: white;
+                    }
+            /* text */
+            .text {
+                position: absolute;
+                right: 0%;
+                width: 0%;
+                opacity: 0;
+                color: white;
+                font-size: 1.2em;
+                font-weight: 600;
+                transition-duration: .3s;
+            }
+
+
+
+            .lds-spinner {
+                color: #2f89fc;
+                display: inline-block;
+                position: relative;
+                width: 80px;
+                height: 80px;
+                left: 31%;
+                bottom: -50px;
+            }
+
+
+                .lds-spinner div {
+                    transform-origin: 40px 40px;
+                    animation: lds-spinner 1.2s linear infinite;
+                }
+
+                    .lds-spinner div:after {
+                        color: #2f89fc;
+                        content: " ";
+                        display: block;
+                        position: absolute;
+                        top: 3px;
+                        left: 37px;
+                        width: 6px;
+                        height: 18px;
+                        border-radius: 20%;
+                        background: #fff;
+                    }
+
+                    .lds-spinner div:nth-child(1) {
+                        transform: rotate(0deg);
+                        animation-delay: -1.1s;
+                    }
+
+                    .lds-spinner div:nth-child(2) {
+                        transform: rotate(30deg);
+                        animation-delay: -1s;
+                    }
+
+                    .lds-spinner div:nth-child(3) {
+                        transform: rotate(60deg);
+                        animation-delay: -0.9s;
+                    }
+
+                    .lds-spinner div:nth-child(4) {
+                        transform: rotate(90deg);
+                        animation-delay: -0.8s;
+                    }
+
+                    .lds-spinner div:nth-child(5) {
+                        transform: rotate(120deg);
+                        animation-delay: -0.7s;
+                    }
+
+                    .lds-spinner div:nth-child(6) {
+                        transform: rotate(150deg);
+                        animation-delay: -0.6s;
+                    }
+
+                    .lds-spinner div:nth-child(7) {
+                        transform: rotate(180deg);
+                        animation-delay: -0.5s;
+                    }
+
+                    .lds-spinner div:nth-child(8) {
+                        transform: rotate(210deg);
+                        animation-delay: -0.4s;
+                    }
+
+                    .lds-spinner div:nth-child(9) {
+                        transform: rotate(240deg);
+                        animation-delay: -0.3s;
+                    }
+
+                    .lds-spinner div:nth-child(10) {
+                        transform: rotate(270deg);
+                        animation-delay: -0.2s;
+                    }
+
+                    .lds-spinner div:nth-child(11) {
+                        transform: rotate(300deg);
+                        animation-delay: -0.1s;
+                    }
+
+                    .lds-spinner div:nth-child(12) {
+                        transform: rotate(330deg);
+                        animation-delay: 0s;
+                    }
+
+            @@keyframes lds-spinner {
+                0% {
+                    opacity: 1;
+                }
+
+                100% {
+                    opacity: 0;
+                }
+            }
+
+        </style>
+
+        <style>
+
+
+            #myCard {
+                display: block;
+            }
+
+            @@media (max-width: 991.98px) {
+
+                #myCard {
+                    display: none;
+                }
+            }
+
+
+
+
+            .custom-menu .btn.btn-primary:focus #content {
+                display: none !important;
+            }
+        </style>
+
+
+
+    </head>
+
+    <body>
+
+
+
+
+        @if (isLoading)
+        {
+
+
+            <div style="align-items:center" class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+
+        }
+
+        else
+        {
+            <RadzenLayout dir="rtl">
+
+
+
+                <div class="wrapper d-flex align-items-stretch " style="overflow:auto;">
+
+
+
+
+                    <nav id="sidebar">
+                        <div class="custom-menu">
+                            <button type="button" id="sidebarCollapse" class="btn btn-primary" onclick="toggleCardDisplay   ()">
+                                <i class="fa fa-bars"></i>
+                                <span style="padding-left: 9px;" class="sr-only">Toggle Menu</span>
+                            </button>
+                        </div>
+
+
+                        <h1><a class="logo btn-dark">تحويلاتـــى</a></h1>
+
+                        <ul class="list-unstyled components mb-5">
+                            @if (UserService.UserRole == "admin")
+                            {
+                                <li >
+                                    <a href="@("/TransferApproval")" @onclick="@(() => SetActiveComponent("TransferApproval"))">
+                                        <span style="padding-left: 9px;" class="fa fa-home mr-3"></span> موافقه التحويلات
+                                    </a>
+                                </li>
+
+
+                                <li >
+                                    <a href="@("/ProjectList")" @onclick="@(() => SetActiveComponent("ProjectsList"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> قائمه المشاريع
+                                    </a>
+                                </li>
+
+                                <li >
+                                    <a href="@("/BankList")" @onclick="@(() => SetActiveComponent("BankList"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> قائمه البنوك
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a href="@("/Mail")" @onclick="@(() => SetActiveComponent("Mail"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> ارسال بريد الكتروني
+                                    </a>
+                                </li>
+
+                                <li >
+                                    <a href="@("/EmailSent")" @onclick="@(() => SetActiveComponent("EmailSent"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> التحويلات المرسله
+                                    </a>
+                                </li>
+
+                         @*        <li class="@((ActiveComponent == "Charts") ? "active" : "")">
+                                    <a href="@("/Charts")" @onclick="@(() => SetActiveComponent("Charts"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> الخرائط
+                                    </a>
+                                </li> *@
+                            }
+                            else
+                            {
+
+                                <li>
+                                    <a href="@("/TransferRequest")" @onclick="@(() => SetActiveComponent("TransferRequest"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> طلبات التحويل
+                                    </a>
+                                </li>
+                                <li >
+                                    <a href="@("/ApprovedRequests")" @onclick="@(() => SetActiveComponent("ApprovedRequests"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> الموافق عليها
+                                    </a>
+                                </li>
+
+@* 
+                                <li class="@((ActiveComponent == "Charts") ? "active" : "")">
+                                    <a href="@("/Charts")" @onclick="@(() => SetActiveComponent("Charts"))">
+                                        <span style="padding-left: 9px;" class="fa fa-sticky-note mr-3"></span> الخرائط
+                                    </a>
+                                </li> *@
+
+                            }
+
+
+                            @if (IsLoggingOut)
+                            {
+                                <div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                            }
+                        </ul>
+
+
+                       <div class="row p-5">
+
+
+
+                            <button class="Btn  col-4" @onclick="Logout" style=" padding-right:10px; border-radius:50%;     margin-right: 20px;
+     ">
+                        @* <button class="Btn col-6" @onclick="Logout" style=" border-radius:50%;  position: absolute; left: 63%;  right: 17px;  bottom: 0px; top: 90%;"> *@
+
+                            <div class="sign"><svg viewBox="0 0 512 512"><path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path></svg></div>
+
+                            <div class="text">Logout</div>
+
+
+                        </button>
+
+
+
+                        <div  class="col-12 ml-2"style=" margin-left:22px; font-size: 19px;">
+
+                                <p style="    margin-top: 11px;    text-align: initial;    "> @UserService.UserRole </p>
+
+                        </div>
+                       </div>
+                    </nav>
+
+
+
+                    <!-- Page Content  -->
+
+                    <div id="content" style="overflow:auto;">
+                        <RadzenCard Style="width:100%; height:100%">
+
+                      @Body
+
+                        </RadzenCard>
+                    </div>
+
+@* 
+                    <AuthorizeView Roles="admin">
+                        <Authorized>
+                            <!-- Content accessible only to admins -->
+                            <p>Welcome, admin!</p>
+                            <NavLink href="/EmailSent">Admin Page</NavLink>
+                        </Authorized>
+                        <NotAuthorized>
+                            <!-- Optionally, show a message or redirect to a different page for non-admins -->
+                            <p>You do not have permission to access this page.</p>
+                        </NotAuthorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView Roles="user">
+                        <Authorized>
+                            <!-- Content accessible only to users -->
+                            <p>Welcome, user!</p>
+                            <NavLink href=/TransferRequest>User Page</NavLink>
+                        </Authorized>
+                        <NotAuthorized>
+                            <!-- Optionally, show a message or redirect to a different page for non-users -->
+                            <p>You do not have permission to access this page.</p>
+                        </NotAuthorized>
+                    </AuthorizeView>
+ *@
+
+
+                </div>
+
+            </RadzenLayout>
+
+        }
+
+
+        <script src="Sidebar/js/jquery.min.js"></script>
+        <script src="Sidebar/js/bootstrap.min.js"></script>
+        <script src="Sidebar/js/main.js"></script>
+
+        <script>
+            function toggleCardDisplay() {
+                var card = document.getElementById("myCard");
+                var button = document.getElementById("sidebar");
+
+                if (window.innerWidth <= 991) {
+                    if (button.classList.contains("active")) {
+                        card.style.display = "none"; // Hide the card
+                    } else {
+                        card.style.display = "block";
+                    }
+                }
+            }
+
+
+        </script>
+
+
+
+
+
+    </body>
+</html>
+</RadzenLayout>
+
+
+
+
+
+
+
+@code {
+    bool isLoading = true; // Set to true initially
+    async Task LoadContent()
+    {
+        // Load your content here
+
+        isLoading = false;
+    }
+    private bool isAdminLoggedIn;
+    private bool isUserLoggedIn;
+
+    private string ActiveComponent { get; set; }  // Set default value for admin
+    private bool IsLoggingOut { get; set; } = false;
+
+    private void SetActiveComponent(string componentName)
+    {
+        ActiveComponent = componentName;
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+
+        LoadContent();
+        SetActiveComponent("TransferApproval");
+    }
+
+    private async Task CheckLoginStatusAsync()
+    {
+        string userRole = UserService.UserRole;
+        bool loggedIn = await localStorage.GetItemAsync<bool>("LOGEDIN");
+
+        isAdminLoggedIn = userRole == "admin" && loggedIn;
+        isUserLoggedIn = userRole == "user" && loggedIn;
+        if (isAdminLoggedIn)
+        {
+            SetActiveComponent("TransferApproval");
+        }
+        else if (isUserLoggedIn)
+        {
+            SetActiveComponent("TransferRequest");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+
+    }
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     await CheckLoginStatusAsync();
+    // }
+
+    // void NavigateTo(string page)
+    // {
+    // 	NavigationManager.NavigateTo($"/{page}");
+    // }
+
+
+    // bool sidebarExpanded = true;
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            await CheckLoginStatusAsync();
+        }
+    }
+
+
+    //Logout
+
+    private async Task Logout()
+    {
+        IsLoggingOut = true;
+
+        await Task.Delay(1000);
+
+        UserService.UserRole = "";
+
+        NavigationManager.NavigateTo("/");
+
+        IsLoggingOut = false;
+
+        await localStorage.SetItemAsync("LOGEDIN", false);
+
+    }
+
+
+}
+
+

@@ -1,0 +1,370 @@
+﻿@page "/ProjectList"
+
+@layout AdminLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using My_Transfers.Models;
+@inject IConfiguration configuration;
+@using Radzen
+@using Radzen.Blazor;
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+ @using Syncfusion.Blazor;
+@using Syncfusion.Blazor.Navigations
+@using Action = Syncfusion.Blazor.Grids.Action
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Popups
+
+
+
+<h3 style="text-align:Center;  font-weight: bold;">قائمه المشاريع</h3>
+
+<SfGrid EnableRtl EnableAltRow TValue="Projects"
+         DataSource="@ProjectList"
+         @ref="ProjectGrid"
+         AllowSorting="true"
+         Toolbar=@ToolbarItems
+         AllowPaging="true"
+         AllowExcelExport="true"
+         AllowPdfExport="true" GridLines="GridLine.Both">
+     <GridPageSettings PageSize="9" />
+
+     <GridEditSettings AllowAdding="true"
+                       AllowEditing="true"
+                       AllowDeleting="true"
+                       Mode="@Syncfusion.Blazor.Grids.EditMode.Dialog">
+     </GridEditSettings>
+
+     <GridEvents TValue="Projects" OnActionComplete="OnActionComplete" OnActionBegin="OnActionBegin"></GridEvents>
+
+     <GridColumns>
+         <GridColumn Field=@nameof(Projects.PROJECT_NAME) HeaderText=" اسم المشروع" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+         <GridColumn Field=@nameof(Projects.PROJECT_ID) HeaderText="كود المشروع" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+         <GridColumn Field=@nameof(Projects.STATUS) DisplayAsCheckBox HeaderText="الحاله" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+     </GridColumns>
+ </SfGrid>
+
+
+
+
+ <SfDialog Width="250px" EnableRtl ShowCloseIcon="true" IsModal="true" @bind-Visible="@IsVisible">
+     <DialogTemplates>
+         <Content> هل أنت متأكد أنك تريد المسح؟</Content>
+     </DialogTemplates>
+     <DialogButtons>
+         <DialogButton Content="حسنا" IsPrimary="true" OnClick=" OkClick" />
+         <DialogButton Content="الغاء" OnClick="(args) => CancelClick(args)" />
+     </DialogButtons>
+ </SfDialog>
+
+
+
+
+ @code {
+    public List<Projects> ProjectList;
+    Projects ProjectGridRow;
+    private SfGrid<Projects> ProjectGrid;
+    public List<string> ToolbarItems = new List<string>() { "Add", "Edit", "Delete" };
+
+    public List<Banks> BanksList;
+    Banks BankGridRow;
+    private SfGrid<Banks> BankGrid;
+    public string _conStr = "";
+    public string ConStr => _conStr;
+
+    private bool IsVisible { get; set; } = false;
+    private bool isConfirmed { get; set; } = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            string ConStr = configuration["ConnectionStrings:Connection"];
+
+            ProjectList = await RunSQL.RunSQLList<Projects>("SELECT * FROM PROJECTS", ConStr);
+
+            BanksList = await RunSQL.RunSQLList<Banks>("SELECT * FROM BANKS", ConStr);
+
+            _conStr = configuration["ConnectionStrings:Connection"];
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during initialization in OnInitializedAsync: {ex.Message}");
+        }
+    }
+
+    private async Task OpenDialog()
+    {
+
+        this.IsVisible = true;
+    }
+
+
+
+    private async Task OkClick()
+    {
+        isConfirmed = true;
+        this.IsVisible = false;
+    }
+
+    private async Task CancelClick(MouseEventArgs args)
+    {
+        this.IsVisible = false;
+
+    }
+
+    public async Task OnActionComplete(ActionEventArgs<Projects> args)
+    {
+        try
+        {
+            if (args.RequestType.Equals(Action.Save))
+            {
+                int existingRecordIndex = ProjectList.FindIndex(I => I.ID == args.Data.ID);
+
+                if (existingRecordIndex != -1)
+                {
+                    await UpdateRecord(args.Data);
+                }
+                else
+                {
+                    await AddRecord(args.Data);
+                }
+
+                StateHasChanged();
+                await OnInitializedAsync();
+                _NotificationService.Notify(MessageSucces);
+            }
+            else if (args.RequestType.Equals(Action.Delete))
+            {
+               await OpenDialog();
+
+                while (IsVisible)
+                {
+                    await Task.Delay(100);
+
+                    if (isConfirmed)
+                    {
+                        await DeleteRecord(args.Data);
+                        StateHasChanged();
+                        isConfirmed = false;
+                        await OnInitializedAsync();
+                        _NotificationService.Notify(MessageDelete);
+
+                        await ProjectGrid.Refresh();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred in OnActionComplete: {ex.Message}");
+        }
+    }
+
+    public async Task OnActionBegin(ActionEventArgs<Projects> args)
+    {
+        try
+        {
+            if (args.RequestType.Equals(Action.Save))
+            {
+                int existingRecordIndex = ProjectList.FindIndex(I => I.ID == args.Data.ID);
+
+                if (existingRecordIndex != -1)
+                {
+                    await UpdateRecord(args.Data);
+                }
+                else
+                {
+                    await AddRecord(args.Data);
+                }
+
+                StateHasChanged();
+                await OnInitializedAsync();
+                _NotificationService.Notify(MessageSucces);
+            }
+            else if (args.RequestType.Equals(Action.Delete))
+            {
+                OpenDialog();
+
+                while (IsVisible)
+                {
+                    await Task.Delay(100);
+
+                    if (isConfirmed)
+                    {
+                        await DeleteRecord(args.Data);
+                        StateHasChanged();
+                        isConfirmed = false;
+                        await OnInitializedAsync();
+                        _NotificationService.Notify(MessageDelete);
+
+                        await ProjectGrid.Refresh();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred in OnActionBegin: {ex.Message}");
+        }
+    }
+
+
+
+
+
+    private async Task AddRecord(Projects newProject)
+    {
+        try
+        {
+            string addQuery = $"INSERT INTO Projects (PROJECT_ID, PROJECT_NAME, STATUS) " +
+                              $"VALUES ('{newProject.PROJECT_ID}', '{newProject.PROJECT_NAME}', '{newProject.STATUS}') " +
+                              $"SELECT 'OK'";
+
+            await RunSQL.RunSQLNonQuery(addQuery, ConStr);
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred while adding a project record: {ex.Message}");
+        }
+    }
+
+
+    private async Task UpdateRecord(Projects updatedProject)
+    {
+        try
+        {
+            string updateQuery = $"UPDATE Projects SET " +
+                                 $"PROJECT_ID = '{updatedProject.PROJECT_ID}', " +
+                                 $"PROJECT_NAME = '{updatedProject.PROJECT_NAME}', " +
+                                 $"STATUS = '{updatedProject.STATUS}' " +
+                                 $"WHERE ID = '{updatedProject.ID}' SELECT 'OK'";
+
+            await RunSQL.RunSQLNonQuery(updateQuery, ConStr);
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred while updating a project record: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteRecord(Projects deletedProject)
+    {
+        try
+        {
+            string deleteQuery = $"DELETE FROM Projects WHERE ID = '{deletedProject.ID}' SELECT 'OK'";
+
+            await RunSQL.RunSQLNonQuery(deleteQuery, ConStr);
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred while deleting a project record: {ex.Message}");
+        }
+    }
+
+
+
+
+
+    public static readonly NotificationMessage MessageSucces =
+        new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Detail = "تمت العمليه بنجاح",
+                Duration = 1500,
+                Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+            };
+
+    public static readonly NotificationMessage MessageDelete =
+    new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Detail = "تم المسح بنجاح",
+            Duration = 1500,
+            Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+        };
+
+    public static NotificationMessage MessageError(string msg) =>
+            new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Detail = msg,
+                    Duration = 4000,
+                    Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+                };
+
+
+    public static readonly NotificationMessage ErrorMSG =
+    new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Detail = "هناك خطأ",
+            Duration = 1500,
+            Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+        };
+
+}
+
+
+
+<style>
+
+
+    .e-float-input input:focus ~ label.e-float-text, .e-float-input input:valid ~ label.e-float-text, .e-float-input input ~ label.e-label-top.e-float-text, .e-float-input input[readonly] ~ label.e-label-top.e-float-text, .e-float-input input[disabled] ~ label.e-label-top.e-float-text, .e-float-input input label.e-float-text.e-label-top, .e-float-input.e-control-wrapper input:focus ~ label.e-float-text, .e-float-input.e-control-wrapper input:valid ~ label.e-float-text, .e-float-input.e-control-wrapper input ~ label.e-label-top.e-float-text, .e-float-input.e-control-wrapper input[readonly] ~ label.e-label-top.e-float-text, .e-float-input.e-control-wrapper input[disabled] ~ label.e-label-top.e-float-text, .e-float-input.e-control-wrapper input label.e-float-text.e-label-top, .e-float-input.e-control-wrapper.e-input-focus input ~ label.e-float-text, .e-float-input.e-input-focus input ~ label.e-float-text {
+        font-size: 12px;
+        font-weight: 500;
+        padding-right: 0;
+        padding-top: 21px;
+        transform: translate3d(-10px, -36px, 0) scale(1);
+    }
+
+    .e-toolbar {
+        padding: 10px;
+        text-align: center;
+    }
+
+    .e-grid .e-toolbar .e-tbar-btn .e-icons,
+    .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn {
+        background: #add8e6;
+    }
+
+    .e-toolbar.e-control[class*=e-toolbar] {
+        text-align: center;
+    }
+
+    .e-toolbar .e-tbar-btn-text, .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn-text {
+        display: none;
+    }
+
+    /* 	.e-toolbar.e-rtl .e-toolbar-items:not(.e-tbar-pos) .e-toolbar-item:first-child {
+                        margin-left: 0;
+                        margin-right: 0;
+                    } */
+
+    .e-toolbar .e-toolbar-item .e-tbar-btn .e-icons.e-btn-icon {
+        margin: 0;
+        min-width: 12px;
+        width: auto;
+        font-size: 13px;
+        line-height: 14px;
+    }
+
+    .e-grid.e-wrap .e-columnheader .e-headercelldiv, .e-grid.e-wrap .e-columnheader .e-headercell.e-fltr-icon .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercell.e-fltr-icon .e-headercelldiv {
+        margin-bottom: 2px;
+        margin-top: 0;
+        margin-left: -40px;
+    }
+
+    span.e-headertext {
+        margin-left: -36px;
+    }
+</style>

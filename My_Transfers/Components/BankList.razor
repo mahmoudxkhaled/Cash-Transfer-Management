@@ -1,0 +1,405 @@
+﻿@page "/BankList"
+
+@layout AdminLayout
+@attribute [StreamRendering]
+@using System.Data;
+@using My_Transfers.Models;
+@inject IConfiguration configuration;
+@using Radzen
+@using Radzen.Blazor;
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor;
+
+@using Action = Syncfusion.Blazor.Grids.Action
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Popups
+
+
+
+<h3 style="text-align: center; font-weight: bold;">قائمة البنوك</h3>
+
+<SfGrid EnableRtl EnableAltRow DataSource="@BanksList" GridLines="GridLine.Both" AllowExcelExport="true" AllowPaging="true"
+         AllowPdfExport="true" @ref="BankGrid" Toolbar=@ToolbarItems
+         AllowSorting="true">
+
+     <GridPageSettings PageSize="9" />
+     <GridEditSettings AllowAdding="true"
+                       AllowEditing="true"
+                       AllowDeleting="true"
+                       Mode="@Syncfusion.Blazor.Grids.EditMode.Dialog">
+     </GridEditSettings>
+     <GridEvents TValue="Banks" OnActionComplete="OnActionComplete" OnActionBegin="OnActionBegin"></GridEvents>
+
+     <GridColumns>
+
+
+         <GridColumn Field=@nameof(Banks.BANK_NAME) HeaderText="اسم البنك" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+
+         <GridColumn Field=@nameof(Banks.BRANCH) HeaderText=" اسم الفرع" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+
+         <GridColumn Field=@nameof(Banks.ACC_NUM) HeaderText="رقم الحساب" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+         <GridColumn Field=@nameof(Banks.ACC_NAME) HeaderText=" اسم الحساب" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="250px"></GridColumn>
+
+         <GridColumn Field=@nameof(Banks.ACC_TYPE) HeaderText="نوع الحساب" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150"></GridColumn>
+
+         <GridColumn Field=@nameof(Banks.BALANCE) HeaderText="رصيد الحساب" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="150px"></GridColumn>
+
+
+         <GridColumn Field=@nameof(Banks.EMAIL) HeaderText="الايميل" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" Width="280px"></GridColumn>
+
+
+
+
+     </GridColumns>
+
+
+
+
+ </SfGrid>
+
+ <SfDialog Width="250px" EnableRtl ShowCloseIcon="true" IsModal="true" @bind-Visible="@IsVisible">
+     <DialogTemplates>
+         <Content> هل أنت متأكد أنك تريد المسح؟</Content>
+     </DialogTemplates>
+     <DialogButtons>
+         <DialogButton Content="حسنا" IsPrimary="true" OnClick=" OkClick" />
+         <DialogButton Content="الغاء" OnClick="(args) => CancelClick(args)" />
+     </DialogButtons>
+ </SfDialog>
+
+ @code {
+    public List<Projects> ProjectList;
+    Projects ProjectGridRow;
+    private SfGrid<Projects> ProjectGrid;
+    public List<string> ToolbarItems = new List<string>() { "Add", "Edit", "Delete" };
+    public List<Banks> BanksList;
+    Banks BankGridRow;
+    private SfGrid<Banks> BankGrid;
+    public string _conStr = "";
+    private bool IsVisible { get; set; } = false;
+    private bool isConfirmed { get; set; } = false;
+
+    public string ConStr => _conStr;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            string ConStr = configuration["ConnectionStrings:Connection"];
+
+            // Fetch project list
+            ProjectList = await RunSQL.RunSQLList<Projects>("SELECT * FROM PROJECTS", ConStr);
+
+            // Fetch banks list
+            BanksList = await RunSQL.RunSQLList<Banks>("SELECT * FROM BANKS", ConStr);
+
+            _conStr = configuration["ConnectionStrings:Connection"];
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred during initialization: {ex.Message}");
+        }
+    }
+
+
+
+    private async Task OpenDialog()
+    {
+
+        this.IsVisible = true;
+    }
+
+
+    private async Task OkClick()
+    {
+         isConfirmed = true;
+        this.IsVisible = false;
+    }
+
+    private async Task CancelClick(MouseEventArgs args)
+    {
+        this.IsVisible = false;
+
+    }
+    public async Task OnActionComplete(ActionEventArgs<Banks> args)
+    {
+
+        try
+        {
+            if (args.RequestType.Equals(Action.Save))
+            {
+
+                var existingRecordIndex = BanksList.Find(I => I.ID == args.Data.ID);
+
+
+                if (existingRecordIndex is not null)
+                {
+                    await UpdateRecord(args.Data);
+                    StateHasChanged();
+                    await OnInitializedAsync();
+                    _NotificationService.Notify(MessageSucces);
+
+
+                }
+                else
+                {
+
+                    await AddRecord(args.Data);
+                    StateHasChanged();
+                    await OnInitializedAsync();
+                    _NotificationService.Notify(MessageSucces);
+
+
+                }
+            }
+
+            else if (args.RequestType.Equals(Action.Delete))
+            {
+
+                await OpenDialog();
+
+                while (IsVisible)
+                {
+                    await Task.Delay(100);
+
+                    if (isConfirmed)
+                    {
+                        await DeleteRecord(args.Data);
+                        StateHasChanged();
+                        isConfirmed = false;
+                        await OnInitializedAsync();
+                        _NotificationService.Notify(MessageDelete);
+
+                        await BankGrid.Refresh();
+                    }
+
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            _NotificationService.Notify(ErrorMSG);
+        }
+
+
+    }
+
+    public async Task OnActionBegin(ActionEventArgs<Banks> args)
+    {
+
+
+        try
+        {
+            if (args.RequestType.Equals(Action.Save))
+            {
+
+                int existingRecordIndex = BanksList.FindIndex(I => I.ID == args.Data.ID);
+
+
+                if (existingRecordIndex != -1)
+                {
+                    await UpdateRecord(args.Data);
+                    StateHasChanged();
+                    await OnInitializedAsync();
+                    _NotificationService.Notify(MessageSucces);
+
+
+                }
+                else
+                {
+
+                    await AddRecord(args.Data);
+                    StateHasChanged();
+                    await OnInitializedAsync();
+                    _NotificationService.Notify(MessageSucces);
+
+
+                }
+            }
+
+            else if (args.RequestType.Equals(Action.Delete))
+            {
+
+                OpenDialog();
+
+                while (IsVisible)
+                {
+                    await Task.Delay(100);
+
+                    if (isConfirmed)
+                    {
+                        await DeleteRecord(args.Data);
+                        StateHasChanged();
+                        isConfirmed = false;
+                        await OnInitializedAsync();
+                        _NotificationService.Notify(MessageDelete);
+
+                        await BankGrid.Refresh();
+                    }
+
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred: {ex.Message}");
+
+        }
+
+
+    }
+
+
+
+
+    private async Task AddRecord(Banks newBank)
+    {
+        try
+        {
+            string addQuery = $"INSERT INTO Banks (BANK_NAME, BRANCH, ACC_NUM, EMAIL, BALANCE, ACC_NAME, ACC_TYPE) " +
+                              $"VALUES ('{newBank.BANK_NAME}', '{newBank.BRANCH}', '{newBank.ACC_NUM}', " +
+                              $"'{newBank.EMAIL}', '{newBank.BALANCE}', '{newBank.ACC_NAME}', '{newBank.ACC_TYPE}') " +
+                              $"SELECT 'OK'";
+
+            await RunSQL.RunSQLNonQuery(addQuery, ConStr);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while adding a record: {ex.Message}");
+            _NotificationService.Notify(ErrorMSG);
+        }
+    }
+
+
+
+    private async Task UpdateRecord(Banks updatedBank)
+    {
+        try
+        {
+            string updateQuery = $"UPDATE Banks SET " +
+                $"BANK_NAME = '{updatedBank.BANK_NAME}', " +
+                $"BRANCH = '{updatedBank.BRANCH}', " +
+                $"EMAIL = '{updatedBank.EMAIL}', " +
+                $"BALANCE = '{updatedBank.BALANCE}', " +
+                $"ACC_NUM = '{updatedBank.ACC_NUM}', " +
+                $"ACC_TYPE = '{updatedBank.ACC_TYPE}', " +
+                $"ACC_NAME = '{updatedBank.ACC_NAME}' " +
+                $"WHERE ID = '{updatedBank.ID}'; SELECT 'OK'";
+
+            await RunSQL.RunSQLNonQuery(updateQuery, ConStr);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred while updating a record: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteRecord(Banks deletedBank)
+    {
+        try
+        {
+            string deleteQuery = $"DELETE FROM BANKS WHERE ID = '{deletedBank.ID}' SELECT 'OK'";
+
+            await RunSQL.RunSQLNonQuery(deleteQuery, ConStr);
+        }
+        catch (Exception ex)
+        {
+            _NotificationService.Notify(ErrorMSG);
+            Console.WriteLine($"An error occurred while deleting a record: {ex.Message}");
+        }
+    }
+
+
+    public static readonly NotificationMessage MessageSucces =
+    new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Detail = "تمت العمليه بنجاح",
+            Duration = 1500,
+            Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+        };
+    public static readonly NotificationMessage MessageDelete =
+    new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Detail = "تم المسح بنجاح",
+            Duration = 1500,
+            Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+        };
+
+    public static readonly NotificationMessage ErrorMSG =
+      new NotificationMessage
+          {
+              Severity = NotificationSeverity.Success,
+              Detail = "هناك خطأ",
+              Duration = 1500,
+              Style = "direction:ltr; text-align: initial;width: 222px; margin: auto;"
+          };
+}
+
+
+
+<style>
+
+    .e-float-input input:focus ~ label.e-float-text, .e-float-input input:valid ~ label.e-float-text, .e-float-input input ~ label.e-label-top.e-float-text, .e-float-input input[readonly] ~ label.e-label-top.e-float-text, .e-float-input input[disabled] ~ label.e-label-top.e-float-text, .e-float-input input label.e-float-text.e-label-top, .e-float-input.e-control-wrapper input:focus ~ label.e-float-text, .e-float-input.e-control-wrapper input:valid ~ label.e-float-text, .e-float-input.e-control-wrapper input ~ label.e-label-top.e-float-text, .e-float-input.e-control-wrapper input[readonly] ~ label.e-label-top.e-float-text, .e-float-input.e-control-wrapper input[disabled] ~ label.e-label-top.e-float-text, .e-float-input.e-control-wrapper input label.e-float-text.e-label-top, .e-float-input.e-control-wrapper.e-input-focus input ~ label.e-float-text, .e-float-input.e-input-focus input ~ label.e-float-text {
+        font-size: 12px;
+        font-weight: 500;
+        padding-right: 0;
+        padding-top: 21px;
+        transform: translate3d(-10px, -36px, 0) scale(1);
+    }
+
+
+    .e-toolbar {
+        padding: 10px;
+        text-align: center;
+    }
+
+    .e-grid .e-toolbar .e-tbar-btn .e-icons,
+    .e-grid .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn {
+        background: #add8e6;
+    }
+
+    .e-toolbar.e-control[class*=e-toolbar] {
+        text-align: center;
+    }
+
+    .e-toolbar .e-tbar-btn-text, .e-toolbar .e-toolbar-items .e-toolbar-item .e-tbar-btn-text {
+        display: none;
+    }
+
+    .e-toolbar.e-rtl .e-toolbar-items:not(.e-tbar-pos) .e-toolbar-item:first-child {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .e-toolbar .e-toolbar-item .e-tbar-btn .e-icons.e-btn-icon {
+        margin: 0;
+        min-width: 12px;
+        width: auto;
+        font-size: 13px;
+        line-height: 14px;
+    }
+
+    .e-grid.e-wrap .e-columnheader .e-headercelldiv, .e-grid.e-wrap .e-columnheader .e-headercell.e-fltr-icon .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercelldiv, .e-grid .e-columnheader.e-wrap .e-headercell.e-fltr-icon .e-headercelldiv {
+        margin-bottom: 2px;
+        margin-top: 0;
+        margin-left: -40px;
+    }
+
+    span.e-headertext {
+        margin-left: -36px;
+    }
+</style>

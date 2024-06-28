@@ -1,0 +1,28 @@
+﻿@using System.Net.Http
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using My_Transfers
+@using My_Transfers.Shared
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.RenderTree
+@using My_Transfers.Components
+@inject NavigationManager NavigationManager
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Radzen
+@using Radzen.Blazor;
+@using My_Transfers.Models
+@inject NotificationService _NotificationService
+@using My_Transfers.Class;
+@using My_Transfers.Interfaces;
+
+@using System.Globalization
+
+@if (System.Globalization.CultureInfo.CurrentCulture == null)
+{
+System.Globalization.CultureInfo.CurrentCulture = new CultureInfo("ar-EG");
+}
