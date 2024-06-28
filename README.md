@@ -16,7 +16,7 @@ This repository contains a system for managing user transfers and sending emails
 - Syncfusion for Excel Export
 - SMTP for Email Sending
 
-## Prerequisites
+## 📋Prerequisites
 - .NET 8.0 SDK
 - SQL Server
 - SMTP Email Server
